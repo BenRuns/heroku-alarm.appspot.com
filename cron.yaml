@@ -1,4 +1,4 @@
 cron:
 - description: daily ping website
   url: /ping/herokus
-  schedule: every 5 minutes
+  schedule: every 30 minutes

@@ -33,7 +33,7 @@ class MainHandler(webapp2.RequestHandler):
         self.response.write('''
 	     <form method="post">
 
-	     Enter your heroku app name to have it pinged every five minutes
+	     Enter your heroku app name to have it pinged every thirty minutes
 	     <p>http://
 		<input type ="text" name="heroku" >. herokuapp.com</p>
 		
@@ -43,6 +43,7 @@ class MainHandler(webapp2.RequestHandler):
         	''' + count + ' websites have signed up with this site </p>')
 
     def post(self):
+    	memcache.flush_all()
     	url = self.request.get("heroku") 
     	e = Website(heroku_name = url)
     	e.put()
@@ -51,7 +52,10 @@ class MainHandler(webapp2.RequestHandler):
 
 class CronHandler(webapp2.RequestHandler):
     def get(self):
-    	websites = Website.query()
+    	websites = memcache.get( 'websites')
+    	if not websites:
+    		websites = Website.query()
+    		memcache.set(key='websites', value=)
     	for website in websites:
     		url = 'http://' + website.heroku_name  + '.herokuapp.com'
     		try:
