@@ -43,7 +43,7 @@ class MainHandler(webapp2.RequestHandler):
         	''' + count + ' websites have signed up with this site </p>')
 
     def post(self):
-    	memcache.flush_all()
+    	
     	url = self.request.get("heroku") 
     	e = Website(heroku_name = url)
     	e.put()
@@ -52,10 +52,9 @@ class MainHandler(webapp2.RequestHandler):
 
 class CronHandler(webapp2.RequestHandler):
     def get(self):
-    	websites = memcache.get( 'websites')
-    	if not websites:
-    		websites = Website.query()
-    		memcache.set(key='websites', value=)
+
+    	websites = Website.query()
+    		
     	for website in websites:
     		url = 'http://' + website.heroku_name  + '.herokuapp.com'
     		try:
@@ -68,21 +67,24 @@ class CronHandler(webapp2.RequestHandler):
 
 class AdminHandler(webapp2.RequestHandler):
     def get(self):
-    	websites = Website.query()
-    	for website in websites:
-    		self.response.write("<br><p> " + website.heroku_name + """
-    			</p><form method="post" action='/myadmin/_delete/""" + str(website.key.id()) + """'>
+    	if users.is_current_user_admin():
+	    	websites = Website.query()
+	    	for website in websites:
+	    		self.response.write("<br><p> " + website.heroku_name + """
+	    			</p><form method="post" action='/myadmin/_delete/""" + str(website.key.id()) + """'>
 
-    			<button type='submit'>delete</button></form><br>""" )
+	    			<button type='submit'>delete</button></form><br>""" )
+		else:
+			self.response.write('not here go away')
+
+class DeleteHandler(webapp2.RequestHandler):
     def post(self, url_id):
-        if users.is_current_user_admin():
-             
-            heroku = Website.get_by_id( int(url_id) )
-          
-
-            
-            heroku.key.delete()
-            self.redirect("/myadmin" )
+		if users.is_current_user_admin():
+			heroku = Website.get_by_id( int(url_id) )
+			heroku.key.delete()
+			self.redirect("/myadmin" )
+		else:
+			self.response.write('not here go away')
 
 			
 
@@ -90,7 +92,7 @@ class AdminHandler(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication([
 	('/ping/herokus', CronHandler),
-	('/myadmin/_delete/(\d+)', AdminHandler),
+	('/myadmin/_delete/(\d+)', DeleteHandler),
 	('/myadmin', AdminHandler),
     ('/', MainHandler),
 
